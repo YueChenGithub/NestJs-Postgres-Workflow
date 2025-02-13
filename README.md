@@ -83,7 +83,7 @@ npm install @nestjs/swagger swagger-ui-express
 
 ## 3. Configure Database
 
-we use Podman compose.
+we use Podman Compose.
 
 Create a `podman-compose.yml` in root directory:
 
@@ -142,6 +142,8 @@ DATABASE_NAME=mydb
 Add imports `app.module.ts`:
 
 ```typescript
+import { ConfigModule } from '@nestjs/config';
+
 @Module({
   //https://docs.nestjs.com/techniques/configuration
   imports: [ConfigModule.forRoot({ isGlobal: true })],
@@ -153,6 +155,9 @@ Add imports `app.module.ts`:
 Add imports in `app.module.ts`:
 
 ```typescript
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
 @Module({
   imports: [
     // https://docs.nestjs.com/techniques/database
@@ -181,6 +186,8 @@ Add imports in `app.module.ts`:
 Modify `main.ts`:
 
 ```typescript
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
 async function bootstrap() {
   // ...
   //https://docs.nestjs.com/openapi/introduction
@@ -197,7 +204,7 @@ async function bootstrap() {
 
 Open Swagger UI by http://localhost:3000/api
 
-## 7. Create Module, Service, and Controller
+## 7. Create Module, Controller, Service, and Entities
 
 ```sh
 # https://docs.nestjs.com/cli/usages#nest-generate
@@ -206,6 +213,31 @@ nest generate resource orchestrations
 ```
 
 ## 8. Edit Entities
+
+Add imports in `orchestrations.module.ts`:
+
+```typescript
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Orchestration } from './entities/orchestration.entity';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Orchestration])],
+})
+```
+
+Edit entity in `src/orchestrations/entities/orchestration.entity.ts`:
+
+```typescript
+import { Entity, PrimaryGeneratedColumn } from 'typeorm';
+
+// A minimal entity
+@Entity()
+export class Orchestration {
+  @PrimaryGeneratedColumn() // Auto-incremented primary key
+  id: number;
+}
+
+```
 
 ## 9. Define API Endpoints
 
