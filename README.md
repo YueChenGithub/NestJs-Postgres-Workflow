@@ -38,7 +38,8 @@ A personal workflow for developing backend database using Typescript and NestJS.
 # Install NestJS CLI:
 npm i -g @nestjs/cli
 
-# Run the following command to create a new NestJS project on current folder:
+# https://docs.nestjs.com/cli/usages#nest-new
+# Create a new NestJS project on current folder:
 nest new .
 ```
 
@@ -198,7 +199,13 @@ Open Swagger UI by http://localhost:3000/api
 
 ## 7. Create Module, Service, and Controller
 
-## 8. Create Entities
+```sh
+# https://docs.nestjs.com/cli/usages#nest-generate
+# use plural
+nest generate resource orchestrations
+```
+
+## 8. Edit Entities
 
 ## 9. Define API Endpoints
 
