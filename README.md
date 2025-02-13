@@ -67,11 +67,11 @@ npm run test:cov
 
 # Workflow
 
-## Define Entities relationship:
+## 1. Define Entities relationship:
 
 [Diagram]
 
-## Install dependencies
+## 2. Install dependencies
 
 ```sh
 npm install @nestjs/typeorm typeorm pg
@@ -79,7 +79,8 @@ npm install class-validator class-transformer
 npm install @nestjs/config
 npm install @nestjs/swagger swagger-ui-express
 ```
-## Configure Database
+
+## 3. Configure Database
 
 we use Podman compose.
 
@@ -94,7 +95,7 @@ services:
     container_name: postgres_workflow
     hostname: postgres_workflow
     ports:
-      - "5430:5432"
+      - '5430:5432'
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
@@ -108,21 +109,24 @@ volumes:
 ```
 
 Run the Container:
+
 ```sh
 podman compose --file .\podman-compose.yml up --build -d
 ```
 
 Stop the Container:
+
 ```sh
 podman compose --file .\podman-compose.yml down
 ```
 
 Test the Connection:
+
 ```sh
 psql -h localhost -p 5430 -U admin -d mydb
 ```
 
-## Set Up Configuration Management
+## 4. Set Up Configuration Management
 
 Create `.env` file:
 
@@ -141,24 +145,55 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
+  //https://docs.nestjs.com/techniques/configuration
   imports: [ConfigModule.forRoot({ isGlobal: true })],
 })
 export class AppModule {}
+```
+
+## 5. Configure Database Connection
+
+Modify `app.module.ts`:
+
+```typescript
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot(),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('DATABASE_HOST'),
+        port: configService.get<number>('DATABASE_PORT'),
+        username: configService.get<string>('DATABASE_USER'),
+        password: configService.get<string>('DATABASE_PASSWORD'),
+        database: configService.get<string>('DATABASE_NAME'),
+        autoLoadEntities: true,
+        synchronize: true, // For dev only; disable in production
+      }),
+    }),
+  ],
+})
+export class AppModule {}
+
 
 ```
 
-## Configure Database Connection
+## 6. Set Up Swagger UI
 
-## Set Up Swagger UI
+## 7. Create Module, Service, and Controller
 
-## Create Module, Service, and Controller
+## 8. Create Entities
 
-## Create Entities
+## 9. Define API Endpoints
 
-## Define API Endpoints
+## 10. Setup Validation with DTOs
 
-## Setup Validation with DTOs
+## 11. Implement Service & Controller
 
-## Implement Service & Controller
-
-## Implement Unit Tests
+## 12. Implement Unit Tests
