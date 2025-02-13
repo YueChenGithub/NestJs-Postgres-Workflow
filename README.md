@@ -72,20 +72,86 @@ npm run test:cov
 [Diagram]
 
 ## Install dependencies
+
 ```sh
 npm install @nestjs/typeorm typeorm pg
 npm install class-validator class-transformer
 npm install @nestjs/config
 npm install @nestjs/swagger swagger-ui-express
 ```
+## Configure Database
+
+we use Podman compose.
+
+Create a `podman-compose.yml` in root directory:
+
+```yaml
+version: '3.8'
+
+services:
+  postgres:
+    image: docker.io/library/postgres:latest
+    container_name: postgres_workflow
+    hostname: postgres_workflow
+    ports:
+      - "5430:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: mydb
+    volumes:
+      - postgres_workflow_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_workflow_data:
+```
+
+Run the Container:
+```sh
+podman compose --file .\podman-compose.yml up --build -d
+```
+
+Stop the Container:
+```sh
+podman compose --file .\podman-compose.yml down
+```
+
+Test the Connection:
+```sh
+psql -h localhost -p 5430 -U admin -d mydb
+```
 
 ## Set Up Configuration Management
+
+Create `.env` file:
+
+```env
+DATABASE_HOST=localhost
+DATABASE_PORT=5430
+DATABASE_USER=admin
+DATABASE_PASSWORD=admin
+DATABASE_NAME=mydb
+```
+
+Configure `ConfigModule` in `app.module.ts`:
+
+```typescript
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+
+@Module({
+  imports: [ConfigModule.forRoot({ isGlobal: true })],
+})
+export class AppModule {}
+
+```
+
+## Configure Database Connection
 
 ## Set Up Swagger UI
 
 ## Create Module, Service, and Controller
-
-## Configure Database Connection
 
 ## Create Entities
 
