@@ -138,31 +138,23 @@ DATABASE_PASSWORD=admin
 DATABASE_NAME=mydb
 ```
 
-Configure `ConfigModule` in `app.module.ts`:
+Add imports `app.module.ts`:
 
 ```typescript
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-
 @Module({
   //https://docs.nestjs.com/techniques/configuration
   imports: [ConfigModule.forRoot({ isGlobal: true })],
 })
-export class AppModule {}
 ```
 
 ## 5. Configure Database Connection
 
-Modify `app.module.ts`:
+Add imports in `app.module.ts`:
 
 ```typescript
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    // https://docs.nestjs.com/techniques/database
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -179,12 +171,30 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     }),
   ],
 })
-export class AppModule {}
 
 
 ```
 
 ## 6. Set Up Swagger UI
+
+Modify `main.ts`:
+
+```typescript
+async function bootstrap() {
+  // ...
+  //https://docs.nestjs.com/openapi/introduction
+  const config = new DocumentBuilder()
+    .setTitle('My API')
+    .setDescription('API Documentation')
+    .setVersion('1.0')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+  // ...
+}
+```
+
+Open Swagger UI by http://localhost:3000/api
 
 ## 7. Create Module, Service, and Controller
 
