@@ -202,7 +202,7 @@ async function bootstrap() {
 }
 ```
 
-Open Swagger UI by http://localhost:3000/api
+>Open Swagger UI by http://localhost:3000/api
 
 ## 7. Create Module, Controller, Service, and Entities
 
@@ -212,7 +212,7 @@ Open Swagger UI by http://localhost:3000/api
 nest generate resource orchestrations
 ```
 
-## 8. Edit Entities
+## 8. Define Entities
 
 Add imports in `orchestrations.module.ts`:
 
@@ -269,11 +269,16 @@ export class Orchestration {
   deletedAt: Date;
 }
 ```
+>More about Entity Columns: https://orkhan.gitbook.io/typeorm/docs/entities#entity-columns
 
-## 9. Define API Endpoints
+>More about Column Types: https://orkhan.gitbook.io/typeorm/docs/entities#column-types
 
-## 10. Setup Validation with DTOs
+## 9. Define Relations
 
-## 11. Implement Service & Controller
+## 10. Define API Endpoints
 
-## 12. Implement Unit Tests
+## 11. Setup Validation with DTOs
+
+## 12. Implement Service & Controller
+
+## 13. Implement Unit Tests
