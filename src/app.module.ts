@@ -4,8 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { OrchestrationsModule } from './orchestrations/orchestrations.module';
-import { ModulesModule } from './modules/modules.module';
 import { DatasModule } from './datas/datas.module';
+import { BlocksModule } from './blocks/blocks.module';
 
 @Module({
   imports: [
@@ -34,9 +34,9 @@ import { DatasModule } from './datas/datas.module';
 
     OrchestrationsModule,
 
-    ModulesModule,
-
     DatasModule,
+
+    BlocksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
