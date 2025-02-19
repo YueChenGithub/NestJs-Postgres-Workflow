@@ -202,7 +202,7 @@ async function bootstrap() {
 }
 ```
 
->Open Swagger UI by http://localhost:3000/api
+> Open Swagger UI by http://localhost:3000/api
 
 ## 7. Create Module, Controller, Service, and Entities
 
@@ -233,7 +233,7 @@ import { Entity, PrimaryGeneratedColumn } from 'typeorm';
 // A minimal entity
 @Entity()
 export class Orchestration {
-  @PrimaryGeneratedColumn() // Auto-incremented primary key
+  @PrimaryGeneratedColumn() // auto-incremented primary key
   id: number;
 }
 ```
@@ -243,7 +243,7 @@ Add Columns:
 ```typescript
 @Entity()
 export class Orchestration {
-  @PrimaryGeneratedColumn() // Auto-incremented primary key
+  @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ unique: true }) // unique column need extra exception handling
@@ -269,11 +269,55 @@ export class Orchestration {
   deletedAt: Date;
 }
 ```
->More about Entity Columns: https://orkhan.gitbook.io/typeorm/docs/entities#entity-columns
 
->More about Column Types: https://orkhan.gitbook.io/typeorm/docs/entities#column-types
+> More about Entity Columns: https://typeorm.io/entities#entity-columns
+
+> More about Column Types: https://typeorm.io/entities#column-types
 
 ## 9. Define Relations
+
+Always use bidirectional relation for more control and convenience.
+
+- ### OneToOne
+
+  > Refer to https://typeorm.io/one-to-one-relations
+
+    <img src="./static/OneToOne.png" alt="OneToOneRelation" width="500">
+
+  ```typescript
+  // Parent
+  @Entity()
+  export class Orchestration {
+    // ...
+    @OneToOne(() => Data, (data) => data.orchestration) // bidirectional relation
+    data: Data;
+  }
+
+  // Child
+  @Entity()
+  export class Data {
+    // ...
+    @OneToOne(() => Orchestration, (orchestration) => orchestration.data)
+    @JoinColumn() // suggest add JoinColumn() to Child
+    orchestration: Orchestration;
+  ```
+
+- ### ManyToOne / OneToMany
+
+  > Refer to https://typeorm.io/many-to-one-one-to-many-relations
+
+  Similar to OneToOne, but no `@JoinColumn()` required.
+
+  _One_ indicates the Parent (`@OneToMany()`), and _Many_ indicates the Child (`@ManyToOne()`). 
+  
+  Forign key will automatically added to the _Many_ (child) side
+
+- ### ManyToMany
+
+  > Refer to https://typeorm.io/many-to-many-relations
+
+- ### Relation Options
+  > Refer to https://typeorm.io/relations#relation-options and https://typeorm.io/eager-and-lazy-relations
 
 ## 10. Define API Endpoints
 

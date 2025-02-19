@@ -1,8 +1,10 @@
+import { Data } from 'src/datas/entities/data.entity';
 import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -26,4 +28,7 @@ export class Block {
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  @OneToOne(() => Data, (data) => data.block)
+  data: Data;
 }

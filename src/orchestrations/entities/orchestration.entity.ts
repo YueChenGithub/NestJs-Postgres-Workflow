@@ -3,10 +3,12 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { OrchestrationType } from '../enums/orchestration-type.enum';
+import { Data } from 'src/datas/entities/data.entity';
 
 @Entity()
 export class Orchestration {
@@ -34,4 +36,9 @@ export class Orchestration {
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  @OneToOne(() => Data, (data) => data.orchestration)
+  data: Data;
+
+  
 }
