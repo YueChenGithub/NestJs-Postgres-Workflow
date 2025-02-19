@@ -252,6 +252,9 @@ export class Orchestration {
   @Column({ nullable: true })
   description: string;
 
+  @Column({ type: 'integer', array: true }) // if arrary, type need to be specified
+  blocks_order: number[];
+
   @Column({
     type: 'enum', // necessary to add type for enum
     enum: OrchestrationType,
@@ -310,7 +313,7 @@ Always use bidirectional relation for more control and convenience.
 
   _One_ indicates the Parent (`@OneToMany()`), and _Many_ indicates the Child (`@ManyToOne()`). 
   
-  Forign key will automatically added to the _Many_ (child) side
+  Foreign key will automatically added to the _Many_ (child) side
 
 - ### ManyToMany
 

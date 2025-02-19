@@ -28,6 +28,9 @@ export class Orchestration {
   })
   type: OrchestrationType;
 
+  @Column({ type: 'integer', array: true })
+  blocks_order: number[];
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -39,6 +42,4 @@ export class Orchestration {
 
   @OneToOne(() => Data, (data) => data.orchestration)
   data: Data;
-
-  
 }
