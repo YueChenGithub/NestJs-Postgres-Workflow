@@ -430,10 +430,87 @@ getUser(@Param('id') id: string) {
 
 ### DTO:
 
-Set up `useGlobalPipes`:
+Set up `useGlobalPipes` in `main.ts`:
 
-> Details on https://docs.nestjs.com/techniques/validation
+```typescript
+async function bootstrap() {
+  // ...
+  // https://docs.nestjs.com/techniques/validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // validator will strip validated (returned) object of any properties that do not use any validation decorators.
+      forbidNonWhitelisted: true, // instead of stripping non-whitelisted properties validator will throw an exception.
+      transform: true, // automatically transform payloads to be objects typed according to their DTO classes
+    }),
+  );
+  // ...
+}
+```
+
+create DTOs according to the entity:
+
+given an orchestration entity:
+
+```typescript
+@Entity()
+export class Orchestration {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ unique: true })
+  name: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column({ type: 'integer', array: true })
+  blocks_order: number[];
+
+  @Column({
+    type: 'enum',
+    enum: OrchestrationType,
+    default: OrchestrationType.TYPEA,
+  })
+  type: OrchestrationType;
+}
+```
+
+`create-orchestration.dto.ts` should be:
+
+```typescript
+export class CreateOrchestrationDto {
+  @IsNotEmpty()
+  @IsString()
+  name: string; // no contraints for unique
+
+  @IsOptional()
+  @IsString()
+  description?: string; // do not forget ? sign
+
+  @IsArray()
+  @ArrayNotEmpty()
+  blocks_order: number[];
+
+  @IsEnum(OrchestrationType)
+  @IsOptional()
+  type?: OrchestrationType;
+}
+```
+
+> class-validator: https://github.com/typestack/class-validator
+
+> class-transformer: https://github.com/typestack/class-transformer
+
+> tipps: AI can perform this task perfectly
 
 ## 13. Implement Service
 
-## 14. Implement Unit Tests
+## 14 Documentation Swagger
+
+### API
+
+### DTO
+
+### Entity
+
+## 15. Implement Unit Tests
