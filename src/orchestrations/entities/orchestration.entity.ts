@@ -44,11 +44,11 @@ export class Orchestration {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @OneToOne(() => Data, { cascade: true })
+  @OneToOne(() => Data, { cascade: true, nullable: false })
   @JoinColumn()
   input_data: Data;
 
-  @OneToOne(() => Data, { cascade: true })
+  @OneToOne(() => Data, { cascade: true, nullable: false })
   @JoinColumn()
   output_data: Data;
 

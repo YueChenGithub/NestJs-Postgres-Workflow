@@ -32,11 +32,11 @@ export class Block {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @OneToOne(() => Data, { cascade: true }) // uni-directional
+  @OneToOne(() => Data, { cascade: true, nullable: false }) // uni-directional
   @JoinColumn()
   input_data: Data;
 
-  @OneToOne(() => Data, { cascade: true })
+  @OneToOne(() => Data, { cascade: true, nullable: false })
   @JoinColumn()
   output_data: Data;
 
