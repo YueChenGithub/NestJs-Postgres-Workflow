@@ -333,13 +333,15 @@ export class Orchestration {
 
   > Refer to https://typeorm.io/many-to-many-relations
 
+  <img src="./static/ManyToMany.png" alt="ManyToManyRelation" width="500">
+
   ```typescript
-  // Owning Side
+  // Owning Side (although in ManyToMany relationship there is no a clear owning side)
   @Entity()
   export class Orchestration {
     // ...
     @ManyToMany(() => Block, (block) => block.orchestrations) // bidirectional relation
-    @JoinTable() // suggest add JoinTable() to the owning side, the FK will be added here
+    @JoinTable() // suggest add JoinTable() to the owning side
     blocks: Block[];
   }
 
@@ -363,8 +365,75 @@ export class Orchestration {
 
 ## 10. Define API Endpoints
 
-## 11. Setup Validation with DTOs
+Define API Endpoints (Basic CRUD will be defined automatically by cli `nest g resource`):
 
-## 12. Implement Service & Controller
+```typescript
+  @Post()
+  create(@Body() createDataDto: CreateDataDto) {
+    return this.datasService.create(createDataDto);
+  }
+```
 
-## 13. Implement Unit Tests
+- @Param():
+  ```typescript
+  @Get(':id/:name')
+  getUser(@Param() params: { id: string; name: string }) { // always return string by reading from url, add Pipes to convert it into number
+    return `User ID: ${params.id}, Name: ${params.name}`;
+  }
+  ```
+  Extracts both id and name from the URL (e.g., `/users/123/John`)
+- @Query():
+
+  ```typescript
+  @Get()
+  findAll(@Query() query: { page: string; limit: string }) {
+    return `Page: ${query.page}, Limit: ${query.limit}`;
+  }
+  ```
+
+  Extracts multiple query parameters (e.g., `/users?page=1&limit=10`).
+
+- @Body():
+
+  ```typescript
+  @Post()
+  createUser(@Body('name') name: string) {
+    return `User Name: ${name}`;
+  }
+  ```
+
+  Extracts only the `name` field from the request body. To extracts the entire body, use DTO
+
+> More about request object: https://docs.nestjs.com/controllers#request-object
+
+## 12. Setup Validation with Pipes and DTOs
+
+### Build-in pipes: `ParseIntPipe` `ParseBoolPipe` `ParseArrayPipe` `ParseUUIDPipe`:
+
+transfer string to the corresponding value, for exmaple:
+
+```typescript
+@Get(':id')
+getUser(@Param('id', ParseIntPipe) id: number) { // convert id into int using Pipes
+  return `User ID: ${id}`;
+}
+```
+
+or do it manually
+
+```typescript
+@Get(':id')
+getUser(@Param('id') id: string) {
+  return `User ID: ${+id}`; // convert id into int manually
+}
+```
+
+### DTO:
+
+Set up `useGlobalPipes`:
+
+> Details on https://docs.nestjs.com/techniques/validation
+
+## 13. Implement Service
+
+## 14. Implement Unit Tests
