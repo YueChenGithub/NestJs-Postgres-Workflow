@@ -279,7 +279,7 @@ export class Orchestration {
 
 ## 9. Define Relations
 
-Always use bidirectional relation for more control and convenience.
+Use bidirectional relation if possible for more control and convenience.
 
 - ### OneToOne
 
@@ -288,6 +288,7 @@ Always use bidirectional relation for more control and convenience.
     <img src="./static/OneToOne.png" alt="OneToOneRelation" width="500">
 
   ```typescript
+  // This is a standard exmaple, we did not follow this in the final code for some extra feature.
   // Parent
   @Entity()
   export class Orchestration {

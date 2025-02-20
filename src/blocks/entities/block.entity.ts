@@ -4,6 +4,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -29,6 +30,11 @@ export class Block {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @OneToOne(() => Data, (data) => data.block)
-  data: Data;
+  @OneToOne(() => Data, { cascade: true })
+  @JoinColumn()
+  input_data: Data;
+
+  @OneToOne(() => Data, { cascade: true })
+  @JoinColumn()
+  output_data: Data;
 }

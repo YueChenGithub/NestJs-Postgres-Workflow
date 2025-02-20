@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -40,6 +41,11 @@ export class Orchestration {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @OneToOne(() => Data, (data) => data.orchestration)
-  data: Data;
+  @OneToOne(() => Data, { cascade: true })
+  @JoinColumn()
+  input_data: Data;
+
+  @OneToOne(() => Data, { cascade: true })
+  @JoinColumn()
+  output_data: Data;
 }
