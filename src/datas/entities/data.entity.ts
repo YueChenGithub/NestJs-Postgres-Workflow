@@ -1,12 +1,8 @@
-import { Block } from 'src/blocks/entities/block.entity';
-import { Orchestration } from 'src/orchestrations/entities/orchestration.entity';
 import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  JoinColumn,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';

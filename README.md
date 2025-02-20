@@ -279,7 +279,20 @@ export class Orchestration {
 
 ## 9. Define Relations
 
-Use bidirectional relation if possible for more control and convenience.
+- ### Basic Concept
+
+  - Owning Side:
+
+    - The owning side of a relationship is the side that holds the foreign key column in the database
+    - Only the owning side should use decorators like `@JoinColumn()` or `@JoinTable()`.
+
+  - Inverse Side:
+
+    - The inverse side refers to the side that doesn't hold the foreign key.
+
+  - Unidirectional
+
+  - Bidirectional
 
 - ### OneToOne
 
@@ -289,7 +302,7 @@ Use bidirectional relation if possible for more control and convenience.
 
   ```typescript
   // This is a standard exmaple, we did not follow this in the final code for some extra feature.
-  // Parent
+  // Parent, Inverse Side
   @Entity()
   export class Orchestration {
     // ...
@@ -297,12 +310,12 @@ Use bidirectional relation if possible for more control and convenience.
     data: Data;
   }
 
-  // Child
+  // Child, Owning Side
   @Entity()
   export class Data {
     // ...
     @OneToOne(() => Orchestration, (orchestration) => orchestration.data)
-    @JoinColumn() // suggest add JoinColumn() to Child
+    @JoinColumn() // suggest add JoinColumn() to Child, the FK will be added here
     orchestration: Orchestration;
   ```
 
@@ -312,13 +325,31 @@ Use bidirectional relation if possible for more control and convenience.
 
   Similar to OneToOne, but no `@JoinColumn()` required.
 
-  _One_ indicates the Parent (`@OneToMany()`), and _Many_ indicates the Child (`@ManyToOne()`). 
-  
+  _One_ indicates the Parent (`@OneToMany()`), and _Many_ indicates the Child (`@ManyToOne()`).
+
   Foreign key will automatically added to the _Many_ (child) side
 
 - ### ManyToMany
 
   > Refer to https://typeorm.io/many-to-many-relations
+
+  ```typescript
+  // Owning Side
+  @Entity()
+  export class Orchestration {
+    // ...
+    @ManyToMany(() => Block, (block) => block.orchestrations) // bidirectional relation
+    @JoinTable() // suggest add JoinTable() to the owning side, the FK will be added here
+    blocks: Block[];
+  }
+
+  // Inverse Side
+  @Entity()
+  export class Block {
+    // ...
+    @ManyToMany(() => Orchestration, (orchestration) => orchestration.blocks)
+    orchestrations: Orchestration[];
+  ```
 
 - ### Relation Options
   > Refer to https://typeorm.io/relations#relation-options and https://typeorm.io/eager-and-lazy-relations

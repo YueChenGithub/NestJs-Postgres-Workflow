@@ -1,10 +1,12 @@
 import { Data } from 'src/datas/entities/data.entity';
+import { Orchestration } from 'src/orchestrations/entities/orchestration.entity';
 import {
   Column,
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
   JoinColumn,
+  ManyToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -30,11 +32,14 @@ export class Block {
   @DeleteDateColumn()
   deletedAt: Date;
 
-  @OneToOne(() => Data, { cascade: true })
+  @OneToOne(() => Data, { cascade: true }) // uni-directional
   @JoinColumn()
   input_data: Data;
 
   @OneToOne(() => Data, { cascade: true })
   @JoinColumn()
   output_data: Data;
+
+  @ManyToMany(() => Orchestration, (orchestration) => orchestration.blocks) // bi-directional
+  orchestrations: Orchestration[];
 }
