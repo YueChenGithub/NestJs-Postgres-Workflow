@@ -529,7 +529,6 @@ export class OrchestrationsService {
 Implement the service function:
 
 ```typescript
-// some repository functions require async and await, more detail on https://typeorm.io/repository-api
   async create(
     createOrchestrationDto: CreateOrchestrationDto,
   ): Promise<Orchestration> {  // Promise<> can be neglected because async function always return Promise
@@ -540,172 +539,236 @@ Implement the service function:
   }
 ```
 
-### Exception Handling
+> More details for async and await: https://typeorm.io/repository-api
 
-- We need to verify that `name` is unique for exmaple, without error handling it returns:
+## 14. Exception Handling
 
-  ```sh
-  {
-    "statusCode": 500,
-    "message": "Internal server error"
+We need to verify that `name` is unique for exmaple, without error handling it returns:
+
+```sh
+{
+  "statusCode": 500,
+  "message": "Internal server error"
+}
+```
+
+### Method 1: check the column name explicitly:
+
+```typescript
+async create(
+  createOrchestrationDto: CreateOrchestrationDto,
+): Promise<Orchestration> {
+  // verify unique name
+  if (
+    await this.orchestrationRepository.findOne({
+      where: { name: createOrchestrationDto.name },
+    })
+  ) {
+    throw new BadRequestException('Orchestration name must be unique.');
   }
-  ```
 
-- Method 1: check the column name explicitly:
+  // create orchestration
+  const orchestration = this.orchestrationRepository.create(
+    createOrchestrationDto,
+  );
+  return await this.orchestrationRepository.save(orchestration);
+}
+```
 
-  ```typescript
-  async create(
-    createOrchestrationDto: CreateOrchestrationDto,
-  ): Promise<Orchestration> {
-    // verify unique name
-    if (
-      await this.orchestrationRepository.findOne({
-        where: { name: createOrchestrationDto.name },
-      })
-    ) {
-      throw new BadRequestException('Orchestration name must be unique.');
-    }
+> More details for build-in HTTP execeoptions on https://docs.nestjs.com/exception-filters#built-in-http-exceptions
 
-    // create orchestration
-    const orchestration = this.orchestrationRepository.create(
-      createOrchestrationDto,
-    );
+and it returns:
+
+```sh
+{
+  "message": "Orchestration name must be unique.",
+  "error": "Bad Request",
+  "statusCode": 400
+}
+```
+
+### Method 2: use the database error codes:
+
+```typescript
+async create(
+  createOrchestrationDto: CreateOrchestrationDto,
+): Promise<Orchestration> {
+  // create orchestration
+  const orchestration = this.orchestrationRepository.create(
+    createOrchestrationDto,
+  );
+
+  try {
     return await this.orchestrationRepository.save(orchestration);
-  }
-  ```
-
-  > More details for build-in HTTP execeoptions on https://docs.nestjs.com/exception-filters#built-in-http-exceptions
-
-  and it returns:
-
-  ```sh
-  {
-    "message": "Orchestration name must be unique.",
-    "error": "Bad Request",
-    "statusCode": 400
-  }
-  ```
-
-- Method 2: use the database error codes:
-
-  ```typescript
-  async create(
-    createOrchestrationDto: CreateOrchestrationDto,
-  ): Promise<Orchestration> {
-    // create orchestration
-    const orchestration = this.orchestrationRepository.create(
-      createOrchestrationDto,
-    );
-
-    try {
-      return await this.orchestrationRepository.save(orchestration);
-    } catch (error) {
-      // check if it is a unique violation
-      if (error.code === '23505') {
-        throw new ConflictException('Unique Violation');
-      }
-      throw error; // go back to throw global exception filter
+  } catch (error) {
+    // check if it is a unique violation
+    if (error.code === '23505') {
+      throw new ConflictException('Unique Violation');
     }
+    throw error; // go back to throw global exception filter
   }
-  ```
+}
+```
 
-  > More postgresql error codes on https://www.postgresql.org/docs/current/errcodes-appendix.html
+> More postgresql error codes on https://www.postgresql.org/docs/current/errcodes-appendix.html
 
-  and it returns:
+and it returns:
 
-  ```sh
-  {
-    "message": "Unique Violation",
-    "error": "Conflict",
-    "statusCode": 409
+```sh
+{
+  "message": "Unique Violation",
+  "error": "Conflict",
+  "statusCode": 409
+}
+```
+
+### Method 3: create a custom (global) exception filter `postgres-exception.filter.ts`:
+
+```typescript
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpStatus,
+} from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
+import { Response } from 'express';
+
+@Catch(QueryFailedError)
+export class PostgresExceptionFilter implements ExceptionFilter {
+  catch(
+    exception: QueryFailedError & {
+      code?: string;
+      detail?: string;
+      table?: string;
+      constraint?: string;
+    },
+    host: ArgumentsHost,
+  ) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+
+    // Only return status 400 bad request, can define more there
+    const status = HttpStatus.BAD_REQUEST;
+
+    response.status(status).json({
+      statusCode: status,
+      postgresCode: exception.code, // PostgreSQL code
+      message: exception.detail || exception.message, // Detailed message
+      table: exception.table, // Affected table
+      constraint: exception.constraint, // Violated constraint
+    });
   }
-  ```
+}
+```
 
-- Method 3: create a custom (global) exception filter `postgres-exception.filter.ts`:
+> More details for exception filter on https://docs.nestjs.com/exception-filters#exception-filters-1
 
-  ```typescript
-  import {
-    ArgumentsHost,
-    Catch,
-    ExceptionFilter,
-    HttpStatus,
-  } from '@nestjs/common';
-  import { QueryFailedError } from 'typeorm';
-  import { Response } from 'express';
+register the filter locally in `orchestrations.controller.ts`:
 
-  @Catch(QueryFailedError) // Only catches database errors
-  export class PostgresExceptionFilter implements ExceptionFilter {
-    catch(
-      exception: QueryFailedError & {
-        code?: string;
-        detail?: string;
-        table?: string;
-        constraint?: string;
+```typescript
+@Controller('orchestrations')
+@UseFilters(PostgresExceptionFilter)
+export class OrchestrationsController {
+  //...
+}
+```
+
+or globally in `main.ts`:
+
+```typescript
+async function bootstrap() {
+  // ...
+  // Register the global filter
+  app.useGlobalFilters(new PostgresExceptionFilter());
+  // ...
+}
+bootstrap();
+```
+
+now it returns:
+
+```sh
+{
+  "statusCode": 400,
+  "postgresCode": "23505",
+  "message": "Key (name)=(Sample Orchestration) already exists.",
+  "table": "orchestration",
+  "constraint": "UQ_158a0156225d9eca72d62a8d66f"
+}
+```
+
+## 15 Documentation Swagger
+
+Document the API for Swagger UI
+
+### Directly in API (using schema)
+
+```typescript
+@ApiOperation({ summary: 'Create a new orchestration' })
+@ApiResponse({
+  status: 201,
+  description: 'The orchestration has been successfully created.',
+})
+@ApiResponse({ status: 400, description: 'Invalid input data.' })
+@ApiBody({
+  description: 'Some description',
+  examples: {
+    example1: {
+      summary: 'Sample example',
+      value: {
+        name: 'Sample Orchestration',
+        description: 'This is a sample orchestration.',
+        blocks_order: [1, 2, 3, 4],
       },
-      host: ArgumentsHost,
-    ) {
-      const ctx = host.switchToHttp();
-      const response = ctx.getResponse<Response>();
+    },
+  },
+})
+@Post()
+create(@Body() createOrchestrationDto: CreateOrchestrationDto) {
+  return this.orchestrationsService.create(createOrchestrationDto);
+}
+```
 
-      // Determine HTTP status (default: 400 Bad Request, Unique constraint: 409 Conflict)
-      const status =
-        exception.code === '23505'
-          ? HttpStatus.CONFLICT
-          : HttpStatus.BAD_REQUEST;
+> More details onhttps://docs.nestjs.com/openapi/decorators
 
-      response.status(status).json({
-        statusCode: status,
-        code: exception.code, // PostgreSQL code (e.g., '23505')
-        message: exception.detail || exception.message, // Detailed message
-        table: exception.table, // Table where the error occurred
-        constraint: exception.constraint, // Violated constraint name
-      });
-    }
-  }
-  ```
+### Combind with DTO (suggested)
 
-  > More details for exception filter on https://docs.nestjs.com/exception-filters#exception-filters-1
+remove the examples in `ApiBody()` and add examples in dto:
 
-  register the filter locally in `orchestrations.controller.ts`:
+```typescript
+export class CreateOrchestrationDto {
+  @ApiProperty({
+    example: 'Sample Orchestration',
+  })
+  @IsNotEmpty()
+  @IsString()
+  name: string;
 
-  ```typescript
-  @Controller('orchestrations')
-  @UseFilters(PostgresExceptionFilter)
-  export class OrchestrationsController {
-    //...
-  }
-  ```
+  @ApiProperty({
+    example: 'This is a sample orchestration.',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  description?: string;
 
-  or globally in `main.ts`:
+  @ApiProperty({
+    example: [1, 2, 3, 4],
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  blocks_order: number[];
 
-  ```typescript
-  async function bootstrap() {
-    // ...
-    // Register the global filter
-    app.useGlobalFilters(new PostgresExceptionFilter());
-    // ...
-  }
-  bootstrap();
-  ```
+  @ApiProperty({
+    enum: OrchestrationType,
+    required: false,
+    example: OrchestrationType.TYPEA,
+  })
+  @IsEnum(OrchestrationType)
+  @IsOptional()
+  type?: OrchestrationType;
+}
+```
 
-  and do not need to add any error handling in `orchestrations.service.ts`, and it returns:
-
-  ```sh
-  {
-    "statusCode": 409,
-    "code": "23505",
-    "message": "Key (name)=(Sample Orchestration) already exists.",
-    "table": "orchestration",
-    "constraint": "UQ_158a0156225d9eca72d62a8d66f"
-  }
-  ```
-
-## 14 Documentation Swagger
-
-### API
-
-### DTO
-
-### Entity
-
-## 15. Implement Unit Tests
+## 16. Implement Unit Tests

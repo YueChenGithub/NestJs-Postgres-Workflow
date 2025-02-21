@@ -21,13 +21,12 @@ export class PostgresExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
-    // Map error code to HTTP status (fallback: 400)
-    const status =
-      exception.code === '23505' ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+    // Only return status 400 bad request, can define more there
+    const status = HttpStatus.BAD_REQUEST;
 
     response.status(status).json({
       statusCode: status,
-      code: exception.code, // PostgreSQL code
+      postgresCode: exception.code, // PostgreSQL code
       message: exception.detail || exception.message, // Detailed message
       table: exception.table, // Affected table
       constraint: exception.constraint, // Violated constraint
