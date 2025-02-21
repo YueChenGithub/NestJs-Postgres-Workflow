@@ -621,18 +621,83 @@ Implement the service function:
   }
   ```
 
-- Method 3: create a custom global exception filter:
+- Method 3: create a custom (global) exception filter `postgres-exception.filter.ts`:
 
   ```typescript
+  import {
+    ArgumentsHost,
+    Catch,
+    ExceptionFilter,
+    HttpStatus,
+  } from '@nestjs/common';
+  import { QueryFailedError } from 'typeorm';
+  import { Response } from 'express';
 
+  @Catch(QueryFailedError) // Only catches database errors
+  export class PostgresExceptionFilter implements ExceptionFilter {
+    catch(
+      exception: QueryFailedError & {
+        code?: string;
+        detail?: string;
+        table?: string;
+        constraint?: string;
+      },
+      host: ArgumentsHost,
+    ) {
+      const ctx = host.switchToHttp();
+      const response = ctx.getResponse<Response>();
+
+      // Determine HTTP status (default: 400 Bad Request, Unique constraint: 409 Conflict)
+      const status =
+        exception.code === '23505'
+          ? HttpStatus.CONFLICT
+          : HttpStatus.BAD_REQUEST;
+
+      response.status(status).json({
+        statusCode: status,
+        code: exception.code, // PostgreSQL code (e.g., '23505')
+        message: exception.detail || exception.message, // Detailed message
+        table: exception.table, // Table where the error occurred
+        constraint: exception.constraint, // Violated constraint name
+      });
+    }
+  }
   ```
 
   > More details for exception filter on https://docs.nestjs.com/exception-filters#exception-filters-1
 
-  and it returns:
+  register the filter locally in `orchestrations.controller.ts`:
+
+  ```typescript
+  @Controller('orchestrations')
+  @UseFilters(PostgresExceptionFilter)
+  export class OrchestrationsController {
+    //...
+  }
+  ```
+
+  or globally in `main.ts`:
+
+  ```typescript
+  async function bootstrap() {
+    // ...
+    // Register the global filter
+    app.useGlobalFilters(new PostgresExceptionFilter());
+    // ...
+  }
+  bootstrap();
+  ```
+
+  and do not need to add any error handling in `orchestrations.service.ts`, and it returns:
 
   ```sh
-
+  {
+    "statusCode": 409,
+    "code": "23505",
+    "message": "Key (name)=(Sample Orchestration) already exists.",
+    "table": "orchestration",
+    "constraint": "UQ_158a0156225d9eca72d62a8d66f"
+  }
   ```
 
 ## 14 Documentation Swagger

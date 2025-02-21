@@ -22,20 +22,10 @@ export class OrchestrationsService {
   async create(
     createOrchestrationDto: CreateOrchestrationDto,
   ): Promise<Orchestration> {
-    // create orchestration
     const orchestration = this.orchestrationRepository.create(
       createOrchestrationDto,
     );
-
-    try {
-      return await this.orchestrationRepository.save(orchestration);
-    } catch (error) {
-      // check if it is a unique violation
-      if (error.code === '23505') {
-        throw new ConflictException('Unique Violation');
-      }
-      throw error; // go back to throw global exception filter
-    }
+    return await this.orchestrationRepository.save(orchestration);
   }
 
   findAll() {
