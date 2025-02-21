@@ -369,10 +369,12 @@ Define API Endpoints (Basic CRUD will be defined automatically by cli `nest g re
 
 ```typescript
   @Post()
-  create(@Body() createDataDto: CreateDataDto) {
-    return this.datasService.create(createDataDto);
+  create(@Body() createOrchestrationDto: CreateOrchestrationDto) {
+    return this.orchestrationsService.create(createOrchestrationDto);
   }
 ```
+
+Some details for routing REST API:
 
 - @Param():
   ```typescript
@@ -504,6 +506,39 @@ export class CreateOrchestrationDto {
 > tipps: AI can perform this task perfectly
 
 ## 13. Implement Service
+
+Inject database Repository in `orchestrations.service.ts`:
+
+```typescript
+import { Orchestration } from './entities/orchestration.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+
+@Injectable()
+export class OrchestrationsService {
+  constructor(
+    // injecting orchestration repository
+    @InjectRepository(Orchestration)
+    private orchestrationRepository: Repository<Orchestration>,
+  ) {}
+
+  // ...
+}
+```
+
+Implement the service function:
+
+```typescript
+// some repository functions require async and await, more detail on https://typeorm.io/repository-api
+  async create(
+    createOrchestrationDto: CreateOrchestrationDto,
+  ): Promise<Orchestration> {  // Promise<> can be neglected because async function always return Promise
+    const orchestration = this.orchestrationRepository.create(
+      createOrchestrationDto,
+    );
+    return await this.orchestrationRepository.save(orchestration);
+  }
+```
 
 ## 14 Documentation Swagger
 

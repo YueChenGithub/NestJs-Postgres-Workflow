@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { OrchestrationsService } from './orchestrations.service';
 import { CreateOrchestrationDto } from './dto/create-orchestration.dto';
 import { UpdateOrchestrationDto } from './dto/update-orchestration.dto';
@@ -23,7 +31,10 @@ export class OrchestrationsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateOrchestrationDto: UpdateOrchestrationDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateOrchestrationDto: UpdateOrchestrationDto,
+  ) {
     return this.orchestrationsService.update(+id, updateOrchestrationDto);
   }
 

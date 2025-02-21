@@ -1,11 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { CreateOrchestrationDto } from './dto/create-orchestration.dto';
 import { UpdateOrchestrationDto } from './dto/update-orchestration.dto';
+import { Orchestration } from './entities/orchestration.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class OrchestrationsService {
-  create(createOrchestrationDto: CreateOrchestrationDto) {
-    return 'This action adds a new orchestration';
+  constructor(
+    /**
+     * Injecting orchestration repository
+     */
+    @InjectRepository(Orchestration)
+    private orchestrationRepository: Repository<Orchestration>,
+  ) {}
+
+  async create(
+    createOrchestrationDto: CreateOrchestrationDto,
+  ): Promise<Orchestration> {
+    const orchestration = this.orchestrationRepository.create(
+      createOrchestrationDto,
+    );
+    return await this.orchestrationRepository.save(orchestration);
   }
 
   findAll() {
