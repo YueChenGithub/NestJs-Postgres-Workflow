@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { CreateOrchestrationDto } from './dto/create-orchestration.dto';
 import { UpdateOrchestrationDto } from './dto/update-orchestration.dto';
 import { Orchestration } from './entities/orchestration.entity';
@@ -18,10 +22,20 @@ export class OrchestrationsService {
   async create(
     createOrchestrationDto: CreateOrchestrationDto,
   ): Promise<Orchestration> {
+    // create orchestration
     const orchestration = this.orchestrationRepository.create(
       createOrchestrationDto,
     );
-    return await this.orchestrationRepository.save(orchestration);
+
+    try {
+      return await this.orchestrationRepository.save(orchestration);
+    } catch (error) {
+      // check if it is a unique violation
+      if (error.code === '23505') {
+        throw new ConflictException('Unique Violation');
+      }
+      throw error; // go back to throw global exception filter
+    }
   }
 
   findAll() {

@@ -540,6 +540,101 @@ Implement the service function:
   }
 ```
 
+### Exception Handling
+
+- We need to verify that `name` is unique for exmaple, without error handling it returns:
+
+  ```sh
+  {
+    "statusCode": 500,
+    "message": "Internal server error"
+  }
+  ```
+
+- Method 1: check the column name explicitly:
+
+  ```typescript
+  async create(
+    createOrchestrationDto: CreateOrchestrationDto,
+  ): Promise<Orchestration> {
+    // verify unique name
+    if (
+      await this.orchestrationRepository.findOne({
+        where: { name: createOrchestrationDto.name },
+      })
+    ) {
+      throw new BadRequestException('Orchestration name must be unique.');
+    }
+
+    // create orchestration
+    const orchestration = this.orchestrationRepository.create(
+      createOrchestrationDto,
+    );
+    return await this.orchestrationRepository.save(orchestration);
+  }
+  ```
+
+  > More details for build-in HTTP execeoptions on https://docs.nestjs.com/exception-filters#built-in-http-exceptions
+
+  and it returns:
+
+  ```sh
+  {
+    "message": "Orchestration name must be unique.",
+    "error": "Bad Request",
+    "statusCode": 400
+  }
+  ```
+
+- Method 2: use the database error codes:
+
+  ```typescript
+  async create(
+    createOrchestrationDto: CreateOrchestrationDto,
+  ): Promise<Orchestration> {
+    // create orchestration
+    const orchestration = this.orchestrationRepository.create(
+      createOrchestrationDto,
+    );
+
+    try {
+      return await this.orchestrationRepository.save(orchestration);
+    } catch (error) {
+      // check if it is a unique violation
+      if (error.code === '23505') {
+        throw new ConflictException('Unique Violation');
+      }
+      throw error; // go back to throw global exception filter
+    }
+  }
+  ```
+
+  > More postgresql error codes on https://www.postgresql.org/docs/current/errcodes-appendix.html
+
+  and it returns:
+
+  ```sh
+  {
+    "message": "Unique Violation",
+    "error": "Conflict",
+    "statusCode": 409
+  }
+  ```
+
+- Method 3: create a custom global exception filter:
+
+  ```typescript
+
+  ```
+
+  > More details for exception filter on https://docs.nestjs.com/exception-filters#exception-filters-1
+
+  and it returns:
+
+  ```sh
+
+  ```
+
 ## 14 Documentation Swagger
 
 ### API
