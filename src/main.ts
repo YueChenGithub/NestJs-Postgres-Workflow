@@ -6,6 +6,12 @@ import { PostgresExceptionFilter } from './postgres-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // /**
+  //  * Set NODE_ENV, Default to `.env` if NODE_ENV is not set
+  //  */
+  // const envFilePath = `.env${process.env.NODE_ENV ?? ''}`;
+  // dotenv.config({ path: path.resolve(process.cwd(), envFilePath) });
+
   /*
    * Use validation pipes globally
    */

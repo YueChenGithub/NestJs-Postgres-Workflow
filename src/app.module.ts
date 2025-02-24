@@ -12,7 +12,10 @@ import { BlocksModule } from './blocks/blocks.module';
     /**
      * Config Module Configuration
      */
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true, // Makes the config available globally
+      envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'], // Prioritizes specific, falls back to default
+    }),
 
     /**
      * TypeORM Module Configuration
@@ -28,7 +31,7 @@ import { BlocksModule } from './blocks/blocks.module';
         password: configService.get<string>('DATABASE_PASSWORD'),
         database: configService.get<string>('DATABASE_NAME'),
         autoLoadEntities: true,
-        synchronize: true, // For dev only; disable in production
+        synchronize: process.env.NODE_ENV !== 'production', // Disable sync in production
       }),
     }),
 

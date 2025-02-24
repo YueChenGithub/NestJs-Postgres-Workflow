@@ -79,6 +79,7 @@ npm install @nestjs/typeorm typeorm pg
 npm install class-validator class-transformer
 npm install @nestjs/config
 npm install @nestjs/swagger swagger-ui-express
+npm install cross-env --save-dev
 ```
 
 ## 3. Configure Database
@@ -129,7 +130,7 @@ psql -h localhost -p 5430 -U admin -d mydb
 
 ## 4. Set Up Configuration Management
 
-Create `.env` file:
+Create `env.development` `.env.test` `.env.production` files:
 
 ```env
 DATABASE_HOST=localhost
@@ -146,8 +147,30 @@ import { ConfigModule } from '@nestjs/config';
 
 @Module({
   //https://docs.nestjs.com/techniques/configuration
-  imports: [ConfigModule.forRoot({ isGlobal: true })],
+  imports: [
+  ConfigModule.forRoot({
+    isGlobal: true,  // Makes the config available globally
+    envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],  // Prioritizes specific, falls back to default
+  }),
+]
 })
+```
+
+Specific commands in `package.json`:
+
+```json
+  "scripts": {
+    "start": "cross-env NODE_ENV=development nest start",
+    "start:dev": "cross-env NODE_ENV=development nest start --watch",
+    "start:debug": "cross-env NODE_ENV=development nest start --debug --watch",
+    "start:test": "cross-env NODE_ENV=test nest start",
+    "start:prod": "cross-env NODE_ENV=production nest start",
+    "test": "cross-env NODE_ENV=test jest",
+    "test:watch": "cross-env NODE_ENV=test jest --watch",
+    "test:cov": "cross-env NODE_ENV=test jest --coverage",
+    "test:debug": "cross-env NODE_ENV=test node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "cross-env NODE_ENV=test jest --config ./test/jest-e2e.json"
+  },
 ```
 
 ## 5. Configure Database Connection
@@ -172,7 +195,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         password: configService.get<string>('DATABASE_PASSWORD'),
         database: configService.get<string>('DATABASE_NAME'),
         autoLoadEntities: true,
-        synchronize: true, // For dev only; disable in production
+        synchronize: process.env.NODE_ENV !== 'production', // Disable sync in production
       }),
     }),
   ],
@@ -771,4 +794,8 @@ export class CreateOrchestrationDto {
 }
 ```
 
+  <img src="./static/Swagger.png" alt="SwaggerDocumentation" width="1000">
+
 ## 16. Implement Unit Tests
+
+## 17. Implement E2E Tests
