@@ -1,5 +1,5 @@
-import { Data } from 'src/datas/entities/data.entity';
-import { Orchestration } from 'src/orchestrations/entities/orchestration.entity';
+import { Data } from '../../datas/entities/data.entity';
+import { Orchestration } from '../../orchestrations/entities/orchestration.entity';
 import {
   Column,
   CreateDateColumn,
@@ -21,7 +21,7 @@ export class Block {
   name: string;
 
   @Column({ nullable: true })
-  description: string;
+  description: string | null;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -37,15 +37,15 @@ export class Block {
     //nullable: false
   }) // uni-directional
   @JoinColumn()
-  input_data: Data;
+  input_data: Data | null;
 
   @OneToOne(() => Data, {
     cascade: true,
     // nullable: false
   })
   @JoinColumn()
-  output_data: Data;
+  output_data: Data | null;
 
   @ManyToMany(() => Orchestration, (orchestration) => orchestration.blocks) // bi-directional
-  orchestrations: Orchestration[];
+  orchestrations: Orchestration[] | null;
 }

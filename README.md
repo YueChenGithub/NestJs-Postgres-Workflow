@@ -166,6 +166,7 @@ Specific commands in `package.json`:
     "start:test": "cross-env NODE_ENV=test nest start",
     "start:prod": "cross-env NODE_ENV=production nest start",
     "test": "cross-env NODE_ENV=test jest",
+    "test:verbose": "cross-env NODE_ENV=test jest --verbose",
     "test:watch": "cross-env NODE_ENV=test jest --watch",
     "test:cov": "cross-env NODE_ENV=test jest --coverage",
     "test:debug": "cross-env NODE_ENV=test node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
@@ -273,7 +274,7 @@ export class Orchestration {
   name: string;
 
   @Column({ nullable: true })
-  description: string;
+  description: string | null; // add null type if nullable
 
   @Column({ type: 'integer', array: true }) // if arrary, type need to be specified
   blocks_order: number[];
@@ -339,7 +340,7 @@ export class Orchestration {
     // ...
     @OneToOne(() => Orchestration, (orchestration) => orchestration.data)
     @JoinColumn() // suggest add JoinColumn() to Child, the FK will be added here
-    orchestration: Orchestration;
+    orchestration: Orchestration | null; // by default nullable: true
   ```
 
 - ### ManyToOne / OneToMany
@@ -365,7 +366,7 @@ export class Orchestration {
     // ...
     @ManyToMany(() => Block, (block) => block.orchestrations) // bidirectional relation
     @JoinTable() // suggest add JoinTable() to the owning side
-    blocks: Block[];
+    blocks: Block[] | null;
   }
 
   // Inverse Side
@@ -373,7 +374,7 @@ export class Orchestration {
   export class Block {
     // ...
     @ManyToMany(() => Orchestration, (orchestration) => orchestration.blocks)
-    orchestrations: Orchestration[];
+    orchestrations: Orchestration[] | null;
   ```
 
 - ### Relation Options
@@ -797,5 +798,183 @@ export class CreateOrchestrationDto {
   <img src="./static/Swagger.png" alt="SwaggerDocumentation" width="1000">
 
 ## 16. Implement Unit Tests
+
+### For service:
+
+Define mockRepository:
+
+```typescript
+// Mock repository
+const mockRepository = {
+  create: jest.fn(),
+  save: jest.fn(),
+};
+```
+
+Inject mockRepository:
+
+```typescript
+beforeEach(async () => {
+  const module: TestingModule = await Test.createTestingModule({
+    providers: [
+      OrchestrationsService,
+      {
+        provide: getRepositoryToken(Orchestration),
+        useValue: mockRepository, // Injecting mock repository
+      },
+    ],
+  }).compile();
+```
+
+Write your tests:
+
+```typescript
+// test
+describe('description', () => {
+  it('test1', async () => {
+    // writing your tests.
+  });
+});
+```
+
+An example for testing create function for orchestrations service:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { OrchestrationsService } from './orchestrations.service';
+import { Orchestration } from './entities/orchestration.entity';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { CreateOrchestrationDto } from './dto/create-orchestration.dto';
+import { OrchestrationType } from './enums/orchestration-type.enum';
+
+describe('OrchestrationsService', () => {
+  let service: OrchestrationsService;
+
+  // Mock repository
+  const mockRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        OrchestrationsService,
+        {
+          provide: getRepositoryToken(Orchestration),
+          useValue: mockRepository, // Injecting mock repository
+        },
+      ],
+    }).compile();
+
+    service = module.get<OrchestrationsService>(OrchestrationsService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  // test start
+  describe('testing create function', () => {
+    it('should create and return orchestration', async () => {
+      // define function input and mockRepository
+      const mockRepositoryInput: CreateOrchestrationDto = {
+        name: 'Test Orchestration',
+        description: 'Test Description',
+        type: OrchestrationType.TYPEA,
+        blocks_order: [1, 2, 3],
+      };
+      const mockRepositoryOutput: Orchestration = {
+        id: 1,
+        ...mockRepositoryInput,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        input_data: null,
+        output_data: null,
+        blocks: null,
+      } as Orchestration;
+
+      // Mock repository behavior
+      mockRepository.create.mockReturnValue(mockRepositoryOutput);
+      mockRepository.save.mockResolvedValue(mockRepositoryOutput);
+
+      // Call the service method
+      const result = await service.create(mockRepositoryInput);
+
+      // Assertions
+      expect(result).toEqual(mockRepositoryOutput);
+    });
+  });
+});
+
+```
+
+> More details for jest mock functions on https://jestjs.io/docs/mock-functions
+
+For Controller:
+
+because the service use databse, we need to mock repository:
+
+```typescript
+// Mock repository with jest
+const mockRepository: Partial<
+  Record<keyof Repository<Orchestration>, jest.Mock>
+> = {
+  create: jest.fn().mockImplementation((dto) => dto),
+  save: jest.fn().mockResolvedValue({ id: 1 }),
+  find: jest.fn().mockResolvedValue([]),
+  findOne: jest.fn().mockResolvedValue(null),
+  update: jest.fn(),
+  remove: jest.fn(),
+};
+```
+
+add reporsitory to servive:
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { OrchestrationsController } from './orchestrations.controller';
+import { OrchestrationsService } from './orchestrations.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Orchestration } from './entities/orchestration.entity';
+import { Repository } from 'typeorm';
+
+describe('OrchestrationsController', () => {
+  let controller: OrchestrationsController;
+  let service: OrchestrationsService;
+
+  // Mock repository with jest
+  const mockRepository: Partial<
+    Record<keyof Repository<Orchestration>, jest.Mock>
+  > = {
+    create: jest.fn().mockImplementation((dto) => dto),
+    save: jest.fn().mockResolvedValue({ id: 1 }),
+    find: jest.fn().mockResolvedValue([]),
+    findOne: jest.fn().mockResolvedValue(null),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [OrchestrationsController],
+      providers: [
+        OrchestrationsService,
+        {
+          provide: getRepositoryToken(Orchestration), // Mock the repository
+          useValue: mockRepository,
+        },
+      ],
+    }).compile();
+
+    controller = module.get<OrchestrationsController>(OrchestrationsController);
+    service = module.get<OrchestrationsService>(OrchestrationsService);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+});
+```
 
 ## 17. Implement E2E Tests

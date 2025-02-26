@@ -13,7 +13,7 @@ export class Data {
   id: number;
 
   @Column({ unique: true })
-  name: string;
+  name: string | null;
 
   @Column({ nullable: true })
   description: string;
